@@ -1,0 +1,13 @@
+{
+    "name": "pavliuk/import-products",
+    "description": "Product import app",
+    "require": {},
+    "autoload": {
+      "psr-4": {
+        "app\\": ""
+      }
+    },
+   "scripts": {
+     "post-install-cmd": ""
+   }
+}
