@@ -1,22 +1,11 @@
 <?php
-use app\core\Application;
+use App\Core\Application;
 require_once "vendor/autoload.php";
+$config = require_once __DIR__.'/config.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $app = new Application();
-    $message = $app->run();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+    $app = new Application($config, $_FILES['file']);
+    $response = $app->run();
 }
-?>
 
-<html lang="en">
-<head>
-<title>Product import</title>
-</head>
-<body>
-<h1><?=$message ?? 'Import products';?></h1>
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="file-csv" required>
-    <button type="submit">Import</button>
-</form>
-</body>
-</html>
+include 'view.php';

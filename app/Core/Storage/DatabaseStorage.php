@@ -1,6 +1,6 @@
 <?php
 
-namespace app\core\storage;
+namespace App\Core\Storage;
 
 use Exception;
 
@@ -9,6 +9,7 @@ abstract class DatabaseStorage implements StorageInterface
     protected $connection;
 
     /**
+     * DatabaseStorage constructor
      * @param array $config
      * @throws Exception
      */
@@ -19,10 +20,11 @@ abstract class DatabaseStorage implements StorageInterface
         }
     }
 
-    public function save(Importable $collection): string
+    /** @inheritDoc */
+    public function save(ImportableInterface $collection): array
     {
         $stats = $this->saveOrUpdate($collection);
 
-        return $stats . " Errors: ".count($collection->getNonImportableData());
+        return $stats + ['errors' => count($collection->getNonImportableData())];
     }
 }

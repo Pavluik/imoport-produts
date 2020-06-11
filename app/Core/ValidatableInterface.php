@@ -1,10 +1,10 @@
 <?php
 
-namespace app\core;
+namespace App\Core;
 
 use Exception;
 
-interface Validatable
+interface ValidatableInterface
 {
     /** @throws Exception */
     public function validate(): void;

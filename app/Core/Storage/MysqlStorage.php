@@ -1,12 +1,17 @@
 <?php
 
-namespace app\core\storage;
+namespace App\Core\Storage;
 
 use Exception;
 use mysqli;
 
 class MysqlStorage extends DatabaseStorage
 {
+    /**
+     * MysqlStorage constructor.
+     * @param array $config
+     * @throws Exception
+     */
     public function __construct(array $config)
     {
         parent::__construct($config);
@@ -19,22 +24,31 @@ class MysqlStorage extends DatabaseStorage
         $this->connection = new mysqli($config['host'], $config['user'], $config['password'], $config['dbname'], $config['port']);
     }
 
-    public function saveOrUpdate(Importable $collection): string
+    /**
+     * Checks the collection for an existing at DB and creates if necessary
+     * @param ImportableInterface $collection
+     * @return array Statistics
+     */
+    public function saveOrUpdate(ImportableInterface $collection): array
     {
-        $this->checkTable($collection);
-
-        $table = $collection->getTable();
-        $uniqueKey = $collection->getUniqueKey();
+        $table = $collection->model->getTable();
+        $uniqueKey = $collection->model->getUniqueKey();
         $items = $collection->getImportableData();
 
         $items = $this->updateOldRecords($table, $items, $uniqueKey);
 
         $inserted = $this->massInsert($table, $items);
 
-        return "Created: $inserted Updated: ".(count($items) - $inserted);
+        return ['created' => $inserted, 'updated' => (count($items) - $inserted)];
 
     }
 
+    /**
+     * @param string $table
+     * @param array $columns
+     * @param string $where
+     * @return mixed
+     */
     private function select(string $table, array $columns, string $where)
     {
         $columns = implode(',', $columns);
@@ -47,6 +61,13 @@ class MysqlStorage extends DatabaseStorage
 
     }
 
+    /**
+     * Update entity by unique key
+     * @param string $table
+     * @param array $attributes
+     * @param string $where
+     * @return mixed
+     */
     private function update(string $table, array $attributes, string $where)
     {
         $keys = implode(',', array_keys($attributes));
@@ -54,7 +75,7 @@ class MysqlStorage extends DatabaseStorage
 
             $query = $this->connection->prepare("UPDATE $table SET $keys) VALUES (?) WHERE $where;");
 
-        $query->bind_param("si", $values);
+        $query->bind_param("s", $values);
 
         $query->execute();
         $query->bind_result($result);
@@ -62,6 +83,13 @@ class MysqlStorage extends DatabaseStorage
         return $result;
     }
 
+    /**
+     * Update entities by unique keys
+     * @param string $table
+     * @param array $items
+     * @param string $uniqueKey
+     * @return array
+     */
     private function updateOldRecords(string $table, array $items, string $uniqueKey): array
     {
         $keys = array_column($items, $uniqueKey);
@@ -86,7 +114,13 @@ class MysqlStorage extends DatabaseStorage
         return $items;
     }
 
-    private function massInsert(string $table, array $attributes)
+    /**
+     * Insert an array of entities
+     * @param string $table
+     * @param array $attributes
+     * @return int
+     */
+    private function massInsert(string $table, array $attributes): int
     {
         if (empty($attributes)) {
             return 0;
@@ -107,16 +141,6 @@ class MysqlStorage extends DatabaseStorage
         $rowsAffected = $query->affected_rows;
         $query->close();
         return $rowsAffected > 0 ? $rowsAffected : 0;
-    }
-
-    public function checkTable(Importable $importable)
-    {
-        $table = $importable->getTable();
-        $columns = $importable->getSqlDescription();
-        $query = $this->connection->prepare("CREATE TABLE IF NOT EXISTS $table ($columns);");
-
-        $query->execute();
-        $query->close();
     }
 
 }

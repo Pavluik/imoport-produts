@@ -1,32 +1,31 @@
 <?php
 
-namespace app\core;
+namespace App\Core;
 
-use app\core\storage\Importable;
+use App\Core\Storage\ImportableInterface;
+use App\Core\Storage\SqlInterface;
 use Exception;
 
-class ProductCollection implements Importable, Validatable
+class ProductCollection implements ImportableInterface, ValidatableInterface
 {
     public ?array $brokenItems = [];
     public ?array $filteredItems = [];
     public array $items = [];
+    public SqlInterface $model;
 
-    private string $table = 'products';
-
-    private array $attributes = [
-        'SKU',
-        'description',
-        'normal_price',
-        'special_price',
-    ];
-
-
+    /**
+     * ProductCollection constructor.
+     * @param array $data
+     * @throws Exception
+     */
     public function __construct(array $data)
     {
         $this->items = $data;
+        $this->model = new Product();
         $this->validate();
     }
 
+    /** @inheritDoc */
     public function validate(): void
     {
         if (empty($this->items)) {
@@ -44,6 +43,11 @@ class ProductCollection implements Importable, Validatable
         }
     }
 
+    /**
+     * Retrieves whether product is valid or not
+     * @param array $productData
+     * @return bool
+     */
     private function checkProduct(array $productData): bool
     {
         return !empty($productData['SKU'])
@@ -53,44 +57,28 @@ class ProductCollection implements Importable, Validatable
             && $productData['special_price'] < $productData['normal_price'];
     }
 
+    /**
+     * Normalizing product attributes
+     * @param array $productData
+     * @return array
+     */
     private function prepareProduct(array $productData): array
     {
-        $product = array_combine($this->attributes, $productData);
+        $product = array_combine($this->model->getAttributes(), $productData);
         $product['normal_price'] = (float) $product['normal_price'];
         $product['special_price'] = (float) $product['special_price'] ?: null;
         return $product;
     }
 
+    /** @inheritDoc */
     public function getImportableData(): array
     {
         return $this->filteredItems;
     }
 
+    /** @inheritDoc */
     public function getNonImportableData(): array
     {
         return $this->brokenItems;
-    }
-
-    public function getTable(): string
-    {
-        return $this->table;
-    }
-
-    public function getUniqueKey(): string
-    {
-        return 'SKU';
-    }
-
-    public function getAttributes(): array
-    {
-        return $this->attributes;
-    }
-
-    public function getSqlDescription(): string
-    {
-        return "`SKU` varchar(16) UNIQUE NOT NULL,
-                `description` text NOT NULL,
-                `normal_price` float NOT NULL,
-                `special_price` float NULL";
     }
 }

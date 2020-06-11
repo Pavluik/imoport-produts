@@ -1,6 +1,6 @@
 <?php
 
-namespace app\core\uploader;
+namespace App\Core\Uploader;
 
 
 use Exception;
@@ -8,9 +8,9 @@ use Exception;
 class CsvFileUploader extends FileUploader
 {
     protected string $fileType = 'text/csv';
-    protected string $attribute = 'file-csv';
 
-    public function parseResource(): CsvFileUploader
+    /** @inheritDoc */
+    public function parseResource(): self
     {
         if (($handle = fopen($this->file["tmp_name"], "r")) !== false) {
             while (($data = fgetcsv($handle)) !== false) {
@@ -22,11 +22,13 @@ class CsvFileUploader extends FileUploader
         return $this;
     }
 
+    /** @inheritDoc */
     public function extractData(): array
     {
         return $this->data;
     }
 
+    /** @inheritDoc */
     public function validate(): void
     {
         parent::validate();
